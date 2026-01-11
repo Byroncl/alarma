@@ -33,24 +33,25 @@ def iniciar_nodo():
 
     try:
         client.connect()
-        print("Conectado a RabbitMQ")
+        print("✓ Conectado a RabbitMQ")
 
         while True:
             if pir.value() == 1:
-                print("¡MOVIMIENTO!")
+                print("🚨 ¡MOVIMIENTO DETECTADO!")
                 led.value(1)
-                client.publish(TOPIC, b"ALERTA")
+                # Enviar evento de disparo
+                client.publish(TOPIC, b"DISPARO")
 
                 # Evitar ráfagas: esperamos a que el sensor baje a 0
                 while pir.value() == 1:
                     time.sleep(0.5)
                 led.value(0)
 
-            time.sleep(0.1)
+            time.sleep(0.5)
 
     except Exception as e:
-        print("Error, reiniciando...", e)
-        time.sleep(5)
+        print("❌ Error, reiniciando...", e)
+        time.sleep(0.5)
         machine.reset()
 
 

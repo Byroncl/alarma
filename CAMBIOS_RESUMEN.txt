@@ -1,0 +1,80 @@
+## ✅ CAMBIOS COMPLETADOS
+
+### 1. ✨ Joystick Removido
+- Visual del joystick eliminado del canvas
+- El crosshair rojo sigue funcionando perfecto con el mouse/touch
+- Más limpio y enfocado en el objetivo
+
+### 2. 🐦 Múltiples Pájaros Aleatorios  
+- Ahora hay **5 pájaros simultáneamente**
+- Cada pájaro:
+  - Posición aleatoria en el canvas
+  - Velocidad variada (0.5 a 2.5 píxeles/frame)
+  - Se regenera en nueva posición al ser alcanzado
+  - Movimiento natural con oscilación
+
+### 3. 📱 Configuración para Red Local
+- Backend: Ya configurado con `host="0.0.0.0"`
+- Frontend: Actualizado vite.config.js con `host="0.0.0.0"`
+- Auto-detección de IP en `config.js`
+- Acceso desde celular en la misma WiFi
+
+---
+
+## 🚀 CÓMO DESPLEGAR
+
+### Terminal 1 - Backend
+```bash
+cd c:\Users\byron\Desktop\alarma\backend
+python app.py
+```
+
+### Terminal 2 - Frontend  
+```bash
+cd c:\Users\byron\Desktop\alarma\frontend
+npm run dev
+```
+
+### En tu Celular
+1. Obtén tu IP: `ipconfig` → busca IPv4 (ej: 192.168.1.100)
+2. En móvil abre: `http://192.168.1.100:5174/`
+3. ¡Listo! Login y a jugar
+
+---
+
+## 📁 Archivos Modificados
+
+✅ `frontend/src/pages/Game.jsx`
+- Removido joystickRef  
+- Agregado birdsRef[] con 5 pájaros
+- Actualizado drawBird() para acepta parámetro bird
+- Removido drawJoystick()
+- Loop en animate() para dibujar todos los pájaros
+- Colisión ahora revisa todos los pájaros
+- Usa API_BASE_URL
+
+✅ `frontend/src/pages/Login.jsx`
+- Importa config.js
+- Usa API_BASE_URL en endpoints
+
+✅ `frontend/vite.config.js`
+- server.host = '0.0.0.0'
+- server.port = 5174
+
+✅ `frontend/src/config.js` (NUEVO)
+- Auto-detección: localhost vs red
+- Constante API_BASE_URL centralizada
+
+---
+
+## 🎮 Gameplay Cambios
+
+**Antes:**
+- 1 pájaro
+- Joystick visual en el canvas
+
+**Ahora:**
+- 5 pájaros moviéndose simultáneamente
+- Interface más limpia
+- Mayor desafío (múltiples objetivos)
+- Funciona en red local

@@ -1,37 +1,172 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
     <title>Monitor Distribuido PIR</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js"></script>
     <style>
-        body { font-family: sans-serif; text-align: center; padding-top: 50px; background: #222; color: white; }
-        #status { font-size: 2em; padding: 20px; border-radius: 10px; }
-        .alert { background: red; animation: blink 1s infinite; }
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        padding: 20px;
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        margin: 0;
+        min-height: 100vh;
+      }
+      h1 {
+        margin-top: 0;
+        font-size: 2.5em;
+      }
+      #status {
+        font-size: 2em;
+        padding: 30px;
+        border-radius: 10px;
+        margin: 20px auto;
+        width: 80%;
+        max-width: 600px;
+        background: rgba(0, 0, 0, 0.3);
+        border: 3px solid #00ff00;
+        transition: all 0.3s;
+      }
+      .alert {
+        background: #ff0000;
+        border: 3px solid #ffff00;
+        animation: blink 0.5s infinite;
+        box-shadow: 0 0 20px rgba(255, 0, 0, 0.8);
+      }
+      @keyframes blink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.3;
+        }
+      }
+      #logs {
+        margin-top: 30px;
+        text-align: left;
+        width: 80%;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+        background: rgba(0, 0, 0, 0.5);
+        border: 1px solid #00ff00;
+        border-radius: 10px;
+        padding: 15px;
+        max-height: 200px;
+        overflow-y: auto;
+        font-family: monospace;
+        font-size: 0.9em;
+      }
+      .log-entry {
+        padding: 5px;
+        border-bottom: 1px solid #333;
+        color: #00ff00;
+      }
+      .connection-status {
+        padding: 10px;
+        border-radius: 5px;
+        margin: 10px auto;
+        width: fit-content;
+        font-weight: bold;
+      }
+      .connected {
+        background: #00ff00;
+        color: #000;
+      }
+      .disconnected {
+        background: #ff0000;
+        color: white;
+      }
     </style>
-</head>
-<body>
-    <h1>Sistema de Vigilancia Distribuido</h1>
-    <div id="status">Esperando señal...</div>
+  </head>
+  <body>
+    <h1>🎥 Sistema de Vigilancia Distribuido</h1>
 
-    <audio id="audioAlerta" src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg" preload="auto"></audio>
+    <div id="connectionStatus" class="connection-status disconnected">
+      🔴 Desconectado
+    </div>
+    <div id="status">Esperando movimiento...</div>
+    <div id="logs">
+      <div class="log-entry">Sistema iniciado...</div>
+    </div>
+
+    <audio
+      id="audioAlerta"
+      src="https://actions.google.com/sounds/v1/alarms/beep_short.ogg"
+      preload="auto"
+    ></audio>
 
     <script>
-        var socket = io();
-        var statusDiv = document.getElementById('status');
-        var audio = document.getElementById('audioAlerta');
+      var socket = io();
+      var statusDiv = document.getElementById('status');
+      var audio = document.getElementById('audioAlerta');
+      var logsDiv = document.getElementById('logs');
+      var connectionStatusDiv = document.getElementById('connectionStatus');
+      var alertCount = 0;
 
-        socket.on('alerta_movimiento', function(data) {
-            statusDiv.innerHTML = data.msg;
-            statusDiv.classList.add('alert');
-            audio.play(); // EMITIR SONIDO
+      function addLog(mensaje) {
+        var timestamp = new Date().toLocaleTimeString();
+        var logEntry = document.createElement('div');
+        logEntry.className = 'log-entry';
+        logEntry.innerHTML = '[' + timestamp + '] ' + mensaje;
+        logsDiv.appendChild(logEntry);
+        logsDiv.scrollTop = logsDiv.scrollHeight; // Auto scroll
+      }
 
-            // Quitar alerta después de 3 segundos
-            setTimeout(function() {
-                statusDiv.innerHTML = "Monitoreando...";
-                statusDiv.classList.remove('alert');
-            }, 3000);
-        });
+      // Evento de conexión
+      socket.on('connect', function () {
+        console.log('Conectado al servidor WebSocket');
+        connectionStatusDiv.innerHTML = '🟢 Conectado';
+        connectionStatusDiv.className = 'connection-status connected';
+        addLog('✓ Conectado al servidor');
+        statusDiv.innerHTML = 'Monitoreando...';
+        statusDiv.classList.remove('alert');
+      });
+
+      // Evento de desconexión
+      socket.on('disconnect', function () {
+        console.log('Desconectado del servidor');
+        connectionStatusDiv.innerHTML = '🔴 Desconectado';
+        connectionStatusDiv.className = 'connection-status disconnected';
+        addLog('✗ Desconectado del servidor');
+        statusDiv.innerHTML = 'Esperando conexión...';
+      });
+
+      // Evento de alerta de movimiento
+      socket.on('alerta_movimiento', function (data) {
+        alertCount++;
+        console.log('Alerta recibida:', data);
+        statusDiv.innerHTML =
+          data.msg + '<br><small>Alerta #' + alertCount + '</small>';
+        statusDiv.classList.add('alert');
+        addLog('🚨 ' + data.msg);
+
+        try {
+          audio.play();
+        } catch (e) {
+          console.log('No se pudo reproducir audio:', e);
+        }
+
+        // Quitar alerta después de 3 segundos
+        setTimeout(function () {
+          statusDiv.innerHTML = 'Monitoreando...';
+          statusDiv.classList.remove('alert');
+        }, 3000);
+      });
+
+      // Evento de estado general
+      socket.on('status', function (data) {
+        console.log('Estado:', data);
+        addLog('Estado: ' + data.msg);
+      });
+
+      // Manejo de errores
+      socket.on('error', function (data) {
+        console.error('Error:', data);
+        addLog('❌ Error: ' + JSON.stringify(data));
+      });
     </script>
-</body>
+  </body>
 </html>
